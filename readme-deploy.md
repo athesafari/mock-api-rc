@@ -25,7 +25,7 @@ The blueprint declares two services:
 2. `mock-dashboard`
    - `type: web`, `env: node`
    - Installs and starts the dashboard inside the `dashboard` directory (`npm install`, `npm start`).
-   - Depends on `wiremock-service` through the `WIREMOCK_URL` environment variable, injected via `fromService` using the WireMock service `connectionString`.
+   - Depends on `wiremock-service` via `WIREMOCK_HOST`/`WIREMOCK_PORT` env vars supplied with `fromService`; the server builds the `WIREMOCK_URL` automatically from those values.
    - Health check served from `/healthz`.
 
 Adjust the branch, plan, or service names in `render.yaml` as needed before deploying.

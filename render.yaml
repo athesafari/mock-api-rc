@@ -19,8 +19,13 @@ services:
     autoDeploy: true
     healthCheckPath: /healthz
     envVars:
-      - key: WIREMOCK_URL
+      - key: WIREMOCK_HOST
         fromService:
           type: web
           name: wiremock-service
-          property: connectionString
+          property: host
+      - key: WIREMOCK_PORT
+        fromService:
+          type: web
+          name: wiremock-service
+          property: port

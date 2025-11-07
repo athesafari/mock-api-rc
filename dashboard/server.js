@@ -5,7 +5,12 @@ import axios from "axios";
 
 const app = express();
 const port = process.env.PORT || 8081;
-const WIREMOCK_URL = process.env.WIREMOCK_URL || "http://localhost:8080";
+const wiremockHost = process.env.WIREMOCK_HOST;
+const wiremockPort = process.env.WIREMOCK_PORT;
+const derivedWiremockUrl = wiremockHost
+  ? `http://${wiremockHost}${wiremockPort ? `:${wiremockPort}` : ""}`
+  : null;
+const WIREMOCK_URL = process.env.WIREMOCK_URL || derivedWiremockUrl || "http://localhost:8080";
 
 app.use(cors());
 app.use(bodyParser.json());
