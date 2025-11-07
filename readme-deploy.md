@@ -1,6 +1,49 @@
-# Render Deployment Guide
+# Cloud Deployment Guide
 
-This walkthrough explains how to deploy the WireMock stubs API (`wiremock-service`) and the mock management dashboard (`mock-dashboard`) to [Render](https://render.com) using the included `render.yaml` blueprint.
+This document covers managed deployments of the WireMock API (`wiremock`) and its dashboard (`mock-dashboard`) on both [Railway](https://railway.app) and [Render](https://render.com).
+
+---
+
+## Deploying to Railway
+
+Railway treats each service as an independent deployment. This repo includes `railway.json` files inside `wiremock/` and `dashboard/` so you can spin up both services from the same repository with minimal manual configuration.
+
+### 1. Prerequisites
+- Railway account connected to your GitHub repository that hosts this code.
+- Railway CLI (`npm i -g railway`) if you prefer terminal-based deployment.
+- Docker & Node.js locally (optional but useful for testing before pushing).
+
+### 2. Create the project and WireMock service
+1. In the Railway dashboard click **New Project → Deploy from Repo**.
+2. Choose this repository and select the **wiremock** directory when prompted for the service root.
+3. Railway automatically reads `wiremock/railway.json` and uses the Dockerfile build with a health check at `/__admin/mappings`.
+4. Deploy the service. Once live, note its public domain (e.g., `https://wiremock-production.up.railway.app`). This will be the `WIREMOCK_URL` for the dashboard.
+
+> **Tip:** If you prefer the CLI, run `railway up --service wiremock --root wiremock`.
+
+### 3. Add the dashboard service
+1. In the same Railway project click **New Service → Deploy from Repo** again.
+2. Choose the repository and select the **dashboard** directory as the root.
+3. Railway applies `dashboard/railway.json`, running `npm start` with a health check on `/healthz`.
+4. After the first build, open the service **Variables** tab and add:
+   - `WIREMOCK_URL=https://<wiremock-domain>`
+5. Redeploy the dashboard so it can talk to WireMock.
+
+### 4. Verify & use
+1. Visit the dashboard’s public URL (shown in Railway) and add a stub.
+2. Call the WireMock service URL to confirm the mock appears.
+3. Any external application can now consume the mocks through the WireMock domain.
+
+### 5. Day-2 operations on Railway
+- **Auto redeploys:** Each push to the tracked branch triggers a new build; disable auto-deploy per service if desired.
+- **Persistent data:** Railway containers have ephemeral disks. If you need mocks to persist across rebuilds, attach a [Railway Volume](https://docs.railway.app/guides/volumes) to the wiremock service and configure WireMock to store mappings there (e.g., mount to `/home/wiremock/mappings`).
+- **Service-to-service URLs:** Railway currently doesn’t inject other service URLs automatically. Keep `WIREMOCK_URL` updated whenever the WireMock domain changes (it stays stable unless you delete the service).
+
+---
+
+## Deploying to Render
+
+Render can provision both services for you via the provided blueprint (`render.yaml`). Commit all changes and push the repo to GitHub/GitLab before continuing.
 
 ## 1. Prerequisites
 - Render account with GitHub access and the Starter plan (or better).
