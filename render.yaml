@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: wiremock-service
+    env: docker
+    plan: starter
+    branch: main
+    dockerfilePath: wiremock/Dockerfile
+    autoDeploy: true
+    healthCheckPath: /__admin/mappings
+
+  - type: web
+    name: mock-dashboard
+    env: node
+    plan: starter
+    branch: main
+    rootDir: dashboard
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    healthCheckPath: /healthz
+    envVars:
+      - key: WIREMOCK_URL
+        fromService:
+          type: web
+          name: wiremock-service
+          property: url

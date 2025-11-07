@@ -1,0 +1,15 @@
+{
+  "data": [
+    {
+      "id": "1777392001234567890",
+      "text": "Hello world! This is a mocked tweet.",
+      "created_at": "2025-11-07T12:00:00Z",
+      "public_metrics": {
+        "retweet_count": 5,
+        "reply_count": 2,
+        "like_count": 20
+      },
+      "conversation_id": "1777392001234567890"
+    }
+  ]
+}

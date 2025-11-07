@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/auth/login"
+  },
+  "response": {
+    "status": 401,
+    "bodyFileName": "login-error.json",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WireMock Studio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #020303;
+        --panel: rgba(18, 18, 18, 0.8);
+        --stroke: rgba(255, 255, 255, 0.08);
+        --primary: #2997ff;
+        --primary-strong: #0a84ff;
+        --text-dim: rgba(255, 255, 255, 0.65);
+        --success: #30d158;
+        --warning: #ffd60a;
+        --danger: #ff453a;
+        font-size: 16px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: radial-gradient(at top, #142145, transparent 45%),
+          radial-gradient(at bottom, #0f1f15, transparent 45%), var(--bg);
+        color: #fff;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: url("https://www.transparenttextures.com/patterns/black-linen.png");
+        opacity: 0.12;
+        pointer-events: none;
+      }
+
+      main {
+        position: relative;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 64px 24px 80px;
+      }
+
+      .glass {
+        background: var(--panel);
+        border: 1px solid var(--stroke);
+        border-radius: 28px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        backdrop-filter: saturate(150%) blur(24px);
+      }
+
+      .top-bar {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 32px;
+      }
+
+      .title h1 {
+        margin: 8px 0 4px;
+        font-size: clamp(32px, 5vw, 48px);
+        font-weight: 600;
+      }
+
+      .title p {
+        margin: 0;
+        color: var(--text-dim);
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text-dim);
+        font-size: 0.9rem;
+      }
+
+      .refresh-btn {
+        appearance: none;
+        border: none;
+        border-radius: 999px;
+        padding: 12px 28px;
+        font-size: 0.95rem;
+        color: #fff;
+        background: linear-gradient(120deg, var(--primary), var(--primary-strong));
+        box-shadow: 0 10px 30px rgba(10, 132, 255, 0.35);
+        cursor: pointer;
+        transition: transform 150ms ease, box-shadow 150ms ease;
+      }
+
+      .refresh-btn:active {
+        transform: translateY(1px);
+        box-shadow: 0 6px 18px rgba(10, 132, 255, 0.45);
+      }
+
+      .panels {
+        margin-top: 32px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 24px;
+      }
+
+      .panel {
+        padding: 32px;
+      }
+
+      .panel h3 {
+        margin: 0 0 24px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      label {
+        font-size: 0.9rem;
+        color: var(--text-dim);
+        letter-spacing: 0.03em;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      input,
+      select,
+      textarea {
+        appearance: none;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 14px 16px;
+        background: rgba(255, 255, 255, 0.02);
+        color: inherit;
+        font: inherit;
+        resize: vertical;
+        transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--primary);
+        outline: none;
+        background: rgba(10, 132, 255, 0.08);
+        box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.15);
+      }
+
+      textarea {
+        min-height: 120px;
+        font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
+      }
+
+      .actions {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .primary-btn {
+        border: none;
+        border-radius: 18px;
+        padding: 14px 32px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #fff;
+        background: linear-gradient(135deg, #5e5ce6, #64d2ff);
+        cursor: pointer;
+        box-shadow: 0 18px 40px rgba(100, 210, 255, 0.35);
+        transition: transform 120ms ease, box-shadow 120ms ease;
+      }
+
+      .primary-btn:active {
+        transform: translateY(1px);
+        box-shadow: 0 8px 24px rgba(100, 210, 255, 0.45);
+      }
+
+      .mock-list {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .mock-card {
+        padding: 20px 22px;
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
+
+      .mock-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        color: var(--text-dim);
+      }
+
+      .method-pill {
+        font-size: 0.9rem;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .method-pill.GET {
+        color: #64d2ff;
+      }
+      .method-pill.POST {
+        color: var(--success);
+      }
+      .method-pill.PUT {
+        color: var(--warning);
+      }
+      .method-pill.DELETE {
+        color: var(--danger);
+      }
+
+      .mock-url {
+        font-weight: 500;
+        color: #fff;
+      }
+
+      .status-chip {
+        margin-left: auto;
+        font-weight: 600;
+        color: var(--text-dim);
+      }
+
+      .mock-body {
+        margin: 16px 0 0;
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(0, 0, 0, 0.35);
+        font-family: "SF Mono", "JetBrains Mono", "Menlo", monospace;
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.85);
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .mock-actions {
+        margin-top: 14px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .ghost-btn {
+        appearance: none;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 999px;
+        padding: 8px 20px;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: border-color 120ms ease, color 120ms ease;
+      }
+
+      .ghost-btn:hover {
+        border-color: rgba(255, 255, 255, 0.45);
+        color: #fff;
+      }
+
+      .empty {
+        margin: 0;
+        padding: 24px;
+        border-radius: 20px;
+        border: 1px dashed rgba(255, 255, 255, 0.15);
+        color: var(--text-dim);
+        text-align: center;
+      }
+
+      @media (max-width: 900px) {
+        .panels {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 600px) {
+        main {
+          padding: 40px 16px 64px;
+        }
+
+        .panel {
+          padding: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="glass top-bar">
+        <div class="title">
+          <span class="chip">WireMock · Live</span>
+          <h1>Mock Studio</h1>
+          <p>Craft and curate mock APIs with the calm precision of an Apple dashboard.</p>
+        </div>
+        <button class="refresh-btn" type="button" onclick="fetchMocks()">Refresh</button>
+      </section>
+
+      <section class="panels">
+        <article class="glass panel">
+          <h3>Add New Mock</h3>
+          <form id="mockForm">
+            <div class="field">
+              <label for="method">Method</label>
+              <select id="method">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="DELETE">DELETE</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="url">URL</label>
+              <input id="url" placeholder="/api/hello" required />
+            </div>
+            <div class="field">
+              <label for="status">Status</label>
+              <input id="status" type="number" value="200" min="100" max="599" required />
+            </div>
+            <div class="field">
+              <label for="body">Response Body (JSON)</label>
+              <textarea id="body" spellcheck="false">{ "message": "ok" }</textarea>
+            </div>
+            <div class="actions">
+              <button class="primary-btn" type="submit">Add Mock</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="glass panel">
+          <h3>Existing Mocks</h3>
+          <div class="mock-list" id="mocks"></div>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const mocksContainer = document.getElementById("mocks");
+
+      const escapeHTML = (str = "") =>
+        str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+
+      async function fetchMocks() {
+        try {
+          const res = await fetch("/api/mocks");
+          if (!res.ok) throw new Error("Unable to load mocks");
+          const mocks = await res.json();
+          renderMocks(mocks);
+        } catch (error) {
+          mocksContainer.innerHTML =
+            '<p class="empty">Something went wrong. Please try again.</p>';
+        }
+      }
+
+      function renderMocks(mocks = []) {
+        if (!mocks.length) {
+          mocksContainer.innerHTML =
+            '<p class="empty">No mocks yet. Create one to see it appear here.</p>';
+          return;
+        }
+
+        mocksContainer.innerHTML = "";
+        mocks.forEach((m) => {
+          const card = document.createElement("div");
+          card.className = "mock-card";
+          card.innerHTML = `
+            <div class="mock-header">
+              <span class="method-pill ${m.request.method}">${m.request.method}</span>
+              <span class="mock-url">${escapeHTML(m.request.url)}</span>
+              <span class="status-chip">${m.response.status}</span>
+            </div>
+            <pre class="mock-body">${escapeHTML(m.response.body || "")}</pre>
+            <div class="mock-actions">
+              <button class="ghost-btn" data-mock-id="${m.id}">Delete</button>
+            </div>
+          `;
+          mocksContainer.appendChild(card);
+        });
+
+        document.querySelectorAll(".ghost-btn").forEach((btn) => {
+          btn.onclick = () => deleteMock(btn.dataset.mockId);
+        });
+      }
+
+      async function deleteMock(id) {
+        await fetch("/api/mocks/" + id, { method: "DELETE" });
+        fetchMocks();
+      }
+
+      document.getElementById("mockForm").onsubmit = async (e) => {
+        e.preventDefault();
+        const body = document.getElementById("body").value;
+        await fetch("/api/mocks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: document.getElementById("url").value,
+            method: document.getElementById("method").value,
+            status: document.getElementById("status").value,
+            body,
+          }),
+        });
+        e.target.reset();
+        document.getElementById("status").value = 200;
+        fetchMocks();
+      };
+
+      fetchMocks();
+    </script>
+  </body>
+</html>

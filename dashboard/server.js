@@ -1,0 +1,56 @@
+import express from "express";
+import cors from "cors";
+import bodyParser from "body-parser";
+import axios from "axios";
+
+const app = express();
+const port = process.env.PORT || 8081;
+const WIREMOCK_URL = process.env.WIREMOCK_URL || "http://localhost:8080";
+
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static("public"));
+
+// Simple heartbeat for Render health checks
+app.get("/healthz", (_req, res) => res.json({ ok: true }));
+
+// List mocks
+app.get("/api/mocks", async (_req, res) => {
+  try {
+    const { data } = await axios.get(`${WIREMOCK_URL}/__admin/mappings`);
+    res.json(data.mappings || []);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Create mock
+app.post("/api/mocks", async (req, res) => {
+  try {
+    const { url, method, status, body } = req.body;
+    const payload = {
+      request: { method, url },
+      response: {
+        status: Number(status),
+        body,
+        headers: { "Content-Type": "application/json" }
+      }
+    };
+    const { data } = await axios.post(`${WIREMOCK_URL}/__admin/mappings`, payload);
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Delete mock
+app.delete("/api/mocks/:id", async (req, res) => {
+  try {
+    await axios.delete(`${WIREMOCK_URL}/__admin/mappings/${req.params.id}`);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.listen(port, () => console.log(`✅ Dashboard running on port ${port}`));
