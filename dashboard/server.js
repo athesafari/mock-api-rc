@@ -25,8 +25,14 @@ app.get("/api/mocks", async (_req, res) => {
     const { data } = await axios.get(`${WIREMOCK_URL}/__admin/mappings`);
     res.json(data.mappings || []);
   } catch (e) {
-    console.error("Failed to list mocks from WireMock:", e?.response?.data || e.message);
-    res.status(500).json({ error: e.message });
+    console.error("Failed to list mocks from WireMock:", {
+      baseUrl: WIREMOCK_URL,
+      status: e?.response?.status,
+      statusText: e?.response?.statusText,
+      data: e?.response?.data,
+      message: e.message
+    });
+    res.status(500).json({ error: e.message, source: "wiremock" });
   }
 });
 
@@ -46,10 +52,13 @@ app.post("/api/mocks", async (req, res) => {
     res.json(data);
   } catch (e) {
     console.error("Failed to create mock:", {
+      baseUrl: WIREMOCK_URL,
+      status: e?.response?.status,
+      statusText: e?.response?.statusText,
       error: e?.response?.data || e.message,
       payload: req.body
     });
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: e.message, source: "wiremock" });
   }
 });
 
@@ -60,11 +69,17 @@ app.delete("/api/mocks/:id", async (req, res) => {
     res.json({ success: true });
   } catch (e) {
     console.error("Failed to delete mock:", {
+      baseUrl: WIREMOCK_URL,
+      status: e?.response?.status,
+      statusText: e?.response?.statusText,
       error: e?.response?.data || e.message,
       id: req.params.id
     });
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: e.message, source: "wiremock" });
   }
 });
 
-app.listen(port, () => console.log(`✅ Dashboard running on port ${port}`));
+app.listen(port, () => {
+  console.log(`✅ Dashboard running on port ${port}`);
+  console.log(`🔗 Using WireMock base URL: ${WIREMOCK_URL}`);
+});
