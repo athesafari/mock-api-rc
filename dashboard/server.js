@@ -25,6 +25,7 @@ app.get("/api/mocks", async (_req, res) => {
     const { data } = await axios.get(`${WIREMOCK_URL}/__admin/mappings`);
     res.json(data.mappings || []);
   } catch (e) {
+    console.error("Failed to list mocks from WireMock:", e?.response?.data || e.message);
     res.status(500).json({ error: e.message });
   }
 });
@@ -44,6 +45,10 @@ app.post("/api/mocks", async (req, res) => {
     const { data } = await axios.post(`${WIREMOCK_URL}/__admin/mappings`, payload);
     res.json(data);
   } catch (e) {
+    console.error("Failed to create mock:", {
+      error: e?.response?.data || e.message,
+      payload: req.body
+    });
     res.status(500).json({ error: e.message });
   }
 });
@@ -54,6 +59,10 @@ app.delete("/api/mocks/:id", async (req, res) => {
     await axios.delete(`${WIREMOCK_URL}/__admin/mappings/${req.params.id}`);
     res.json({ success: true });
   } catch (e) {
+    console.error("Failed to delete mock:", {
+      error: e?.response?.data || e.message,
+      id: req.params.id
+    });
     res.status(500).json({ error: e.message });
   }
 });
