@@ -12,9 +12,9 @@ The dashboard talks to the WireMock service via HTTP, so the mocked APIs can be 
 ```
 wiremock-mockapi/
 ├── wiremock/
-│   ├── Dockerfile           # Custom WireMock image for Render
 │   ├── mappings/            # Default WireMock stubs
 │   └── __files/             # Payload bodies referenced by the stubs
+├── Dockerfile               # WireMock image (used for Railway/Render)
 ├── dashboard/               # Express server + Apple-style UI
 ├── docker-compose.yml       # Local orchestration of both services
 └── render.yaml              # Render blueprint (deploy both services together)

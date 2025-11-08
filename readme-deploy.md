@@ -62,7 +62,7 @@ The blueprint declares two services:
 
 1. `wiremock-service`
    - `type: web`, `env: docker`
-   - Builds from `wiremock/Dockerfile` (bundles all mappings and response bodies).
+   - Builds from the repo-root `Dockerfile` (bundles all mappings and response bodies).
    - Exposes port `8080` with health check `/__admin/mappings`.
 
 2. `mock-dashboard`
