@@ -5,6 +5,7 @@ services:
     plan: starter
     branch: main
     dockerfilePath: wiremock/Dockerfile
+    dockerContext: wiremock
     autoDeploy: true
     healthCheckPath: /__admin/mappings
 
