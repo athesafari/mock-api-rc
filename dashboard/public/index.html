@@ -199,20 +199,85 @@
         gap: 18px;
       }
 
-      .mock-card {
-        padding: 20px 22px;
-        border-radius: 24px;
+      .group-card {
+        border-radius: 26px;
         border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.03);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        background: rgba(255, 255, 255, 0.02);
+        overflow: hidden;
       }
 
-      .mock-header {
+      .group-header {
+        width: 100%;
+        padding: 20px 24px;
+        background: transparent;
+        border: 0;
+        color: inherit;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+      }
+
+      .group-header:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .group-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      .group-url {
+        margin: 0;
+        font-weight: 600;
+        color: #fff;
+      }
+
+      .group-count {
+        font-size: 0.85rem;
+        color: var(--text-dim);
+      }
+
+      .chevron {
+        transition: transform 160ms ease;
+      }
+
+      .group-card.expanded .chevron {
+        transform: rotate(180deg);
+      }
+
+      .group-body {
+        display: none;
+        padding: 0 24px 24px;
+        display: none;
+      }
+
+      .group-card.expanded .group-body {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .variant {
+        padding: 16px 18px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(0, 0, 0, 0.25);
+      }
+
+      .variant-meta {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 12px;
-        color: var(--text-dim);
+      }
+
+      .variant-actions {
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
       }
 
       .method-pill {
@@ -242,7 +307,6 @@
       }
 
       .status-chip {
-        margin-left: auto;
         font-weight: 600;
         color: var(--text-dim);
       }
@@ -259,12 +323,6 @@
         word-break: break-word;
       }
 
-      .mock-actions {
-        margin-top: 14px;
-        display: flex;
-        justify-content: flex-end;
-      }
-
       .ghost-btn {
         appearance: none;
         border: 1px solid rgba(255, 255, 255, 0.15);
@@ -279,6 +337,21 @@
 
       .ghost-btn:hover {
         border-color: rgba(255, 255, 255, 0.45);
+        color: #fff;
+      }
+
+      .ghost-btn.subtle {
+        padding: 6px 16px;
+        font-size: 0.85rem;
+      }
+
+      .ghost-btn.danger {
+        border-color: rgba(255, 69, 58, 0.35);
+        color: var(--danger);
+      }
+
+      .ghost-btn.danger:hover {
+        border-color: rgba(255, 69, 58, 0.65);
         color: #fff;
       }
 
@@ -314,7 +387,6 @@
         <div class="title">
           <span class="chip">WireMock · Live</span>
           <h1>Mock Studio</h1>
-          <p>Craft and curate mock APIs with the calm precision of an Apple dashboard.</p>
         </div>
         <button class="refresh-btn" type="button" onclick="fetchMocks()">Refresh</button>
       </section>
@@ -342,13 +414,16 @@
             </div>
             <div class="field">
               <label for="body">Response Body (JSON)</label>
-              <textarea id="body" spellcheck="false">{ "message": "ok" }</textarea>
-            </div>
-            <div class="actions">
-              <button class="primary-btn" type="submit">Add Mock</button>
-            </div>
-          </form>
-        </article>
+          <textarea id="body" spellcheck="false">{ "message": "ok" }</textarea>
+        </div>
+        <div class="actions">
+          <button class="ghost-btn subtle" type="button" id="cancelEdit" hidden>
+            Cancel
+          </button>
+          <button class="primary-btn" type="submit" id="submitBtn">Add Mock</button>
+        </div>
+      </form>
+    </article>
 
         <article class="glass panel">
           <h3>Existing Mocks</h3>
@@ -359,6 +434,13 @@
 
     <script>
       const mocksContainer = document.getElementById("mocks");
+      const mockForm = document.getElementById("mockForm");
+      const methodInput = document.getElementById("method");
+      const urlInput = document.getElementById("url");
+      const statusInput = document.getElementById("status");
+      const bodyInput = document.getElementById("body");
+      const submitBtn = document.getElementById("submitBtn");
+      const cancelEditBtn = document.getElementById("cancelEdit");
 
       const escapeHTML = (str = "") =>
         str
@@ -368,17 +450,34 @@
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&#39;");
 
+      let editingId = null;
+      let cachedMocks = [];
+
       async function fetchMocks() {
         try {
           const res = await fetch("/api/mocks");
           if (!res.ok) throw new Error("Unable to load mocks");
           const mocks = await res.json();
+          cachedMocks = mocks;
           renderMocks(mocks);
         } catch (error) {
           mocksContainer.innerHTML =
             '<p class="empty">Something went wrong. Please try again.</p>';
         }
       }
+
+      const groupMocks = (mocks = []) => {
+        const grouped = mocks.reduce((acc, mock) => {
+          const key = mock.request.url || mock.request.urlPattern || "Custom matcher";
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(mock);
+          return acc;
+        }, {});
+        return Object.entries(grouped).map(([url, entries]) => ({
+          url,
+          entries,
+        }));
+      };
 
       function renderMocks(mocks = []) {
         if (!mocks.length) {
@@ -387,51 +486,114 @@
           return;
         }
 
+        const groups = groupMocks(mocks);
         mocksContainer.innerHTML = "";
-        mocks.forEach((m) => {
-          const card = document.createElement("div");
-          card.className = "mock-card";
+
+        groups.forEach((group) => {
+          const card = document.createElement("article");
+          card.className = "group-card";
+
           card.innerHTML = `
-            <div class="mock-header">
-              <span class="method-pill ${m.request.method}">${m.request.method}</span>
-              <span class="mock-url">${escapeHTML(m.request.url)}</span>
-              <span class="status-chip">${m.response.status}</span>
-            </div>
-            <pre class="mock-body">${escapeHTML(m.response.body || "")}</pre>
-            <div class="mock-actions">
-              <button class="ghost-btn" data-mock-id="${m.id}">Delete</button>
+            <button class="group-header" type="button">
+              <div class="group-meta">
+                <p class="group-url">${escapeHTML(group.url)}</p>
+                <span class="group-count">${group.entries.length} ${
+            group.entries.length > 1 ? "variations" : "variation"
+          }</span>
+              </div>
+              <span class="chevron">⌄</span>
+            </button>
+            <div class="group-body">
+              ${group.entries
+                .map(
+                  (entry) => `
+                  <div class="variant">
+                    <div class="variant-meta">
+                      <span class="method-pill ${entry.request.method}">${entry.request.method}</span>
+                      <span class="status-chip">${entry.response.status}</span>
+                      <div class="variant-actions">
+                        <button class="ghost-btn subtle" data-edit="${entry.id}">Edit</button>
+                        <button class="ghost-btn danger subtle" data-delete="${entry.id}">Delete</button>
+                      </div>
+                    </div>
+                    <pre class="mock-body">${escapeHTML(entry.response.body || "")}</pre>
+                  </div>
+                `
+                )
+                .join("")}
             </div>
           `;
-          mocksContainer.appendChild(card);
-        });
 
-        document.querySelectorAll(".ghost-btn").forEach((btn) => {
-          btn.onclick = () => deleteMock(btn.dataset.mockId);
+          const header = card.querySelector(".group-header");
+          header.addEventListener("click", () => card.classList.toggle("expanded"));
+
+          card.querySelectorAll("[data-delete]").forEach((btn) => {
+            btn.addEventListener("click", (event) => {
+              event.stopPropagation();
+              deleteMock(btn.dataset.delete);
+            });
+          });
+
+          card.querySelectorAll("[data-edit]").forEach((btn) => {
+            btn.addEventListener("click", (event) => {
+              event.stopPropagation();
+              startEdit(btn.dataset.edit);
+            });
+          });
+
+          mocksContainer.appendChild(card);
         });
       }
 
       async function deleteMock(id) {
         await fetch("/api/mocks/" + id, { method: "DELETE" });
+        if (editingId === id) resetForm();
         fetchMocks();
       }
 
-      document.getElementById("mockForm").onsubmit = async (e) => {
+      function startEdit(id) {
+        const mock = cachedMocks.find((m) => m.id === id);
+        if (!mock) return;
+        editingId = id;
+        methodInput.value = mock.request.method;
+        urlInput.value = mock.request.url || mock.request.urlPattern || "";
+        statusInput.value = mock.response.status;
+        bodyInput.value = mock.response.body || "";
+        submitBtn.textContent = "Save Changes";
+        cancelEditBtn.hidden = false;
+      }
+
+      function resetForm() {
+        editingId = null;
+        mockForm.reset();
+        statusInput.value = 200;
+        submitBtn.textContent = "Add Mock";
+        cancelEditBtn.hidden = true;
+      }
+
+      cancelEditBtn.addEventListener("click", () => resetForm());
+
+      mockForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const body = document.getElementById("body").value;
-        await fetch("/api/mocks", {
-          method: "POST",
+        const payload = {
+          url: urlInput.value,
+          method: methodInput.value,
+          status: statusInput.value,
+          body: bodyInput.value,
+        };
+
+        const endpoint = editingId ? `/api/mocks/${editingId}` : "/api/mocks";
+        const method = editingId ? "PUT" : "POST";
+
+        await fetch(endpoint, {
+          method,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            url: document.getElementById("url").value,
-            method: document.getElementById("method").value,
-            status: document.getElementById("status").value,
-            body,
-          }),
+          body: JSON.stringify(payload),
         });
-        e.target.reset();
-        document.getElementById("status").value = 200;
+
+        resetForm();
         fetchMocks();
-      };
+      });
 
       fetchMocks();
     </script>

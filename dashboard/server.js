@@ -79,6 +79,33 @@ app.delete("/api/mocks/:id", async (req, res) => {
   }
 });
 
+// Update mock
+app.put("/api/mocks/:id", async (req, res) => {
+  try {
+    const { url, method, status, body } = req.body;
+    const payload = {
+      request: { method, url },
+      response: {
+        status: Number(status),
+        body,
+        headers: { "Content-Type": "application/json" }
+      }
+    };
+    const { data } = await axios.put(`${WIREMOCK_URL}/__admin/mappings/${req.params.id}`, payload);
+    res.json(data);
+  } catch (e) {
+    console.error("Failed to update mock:", {
+      baseUrl: WIREMOCK_URL,
+      status: e?.response?.status,
+      statusText: e?.response?.statusText,
+      error: e?.response?.data || e.message,
+      id: req.params.id,
+      payload: req.body
+    });
+    res.status(500).json({ error: e.message, source: "wiremock" });
+  }
+});
+
 app.listen(port, () => {
   console.log(`✅ Dashboard running on port ${port}`);
   console.log(`🔗 Using WireMock base URL: ${WIREMOCK_URL}`);
